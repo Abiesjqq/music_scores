@@ -12,48 +12,46 @@ headers = {
 }
 
 
-# url1爬虫函数
-def crawl1(url_name, target_name):
+def crawl(url_name, target_name, parse_func):
     try:
         resp = requests.get(url_name, headers=headers)
-        resp.encoding = "gb2312"
-        resp.raise_for_status()
-        time.sleep(1)
+        time.sleep(0.5)
     except requests.RequestException as e:
         print(f"Error: {e}")
         return
 
+    if url_name == url1:
+        resp.encoding = "gb2312"
+    elif url_name == url2:
+        resp.encoding = "utf-8"
+    else:
+        resp.encoding = resp.apparent_encoding
+
+    parse_func(resp, target_name)
+
+
+def parse_1(response, target_name):
     # 解析HTML，获取歌名
-    soup = BeautifulSoup(resp.text, "html.parser")
+    soup = BeautifulSoup(response.text, "html.parser")
     all_titles = soup.find_all("dt", attrs={"class": "l1"})
     for title in all_titles:
         song_name = title.find("a").get_text()
         if not song_name:
             continue
 
-        # 判断歌名与输入是否相等
+        # 判断歌名与输入是否相等a
         if target_name in song_name:
             href = title.find("a").get("href")
             if not href:
                 print("Error:href not found")
                 continue
-            print("found:\n", f"https://www.jianpu.net{href}")
+            print(f"found:{song_name}\n", f"https://www.jianpu.net{href}")
             break
 
 
-# url2爬虫函数
-def crawl2(url_name, target_name):
-    try:
-        resp = requests.get(url_name, headers=headers)
-        resp.encoding = "utf-8"
-        resp.raise_for_status()
-        time.sleep(1)
-    except requests.RequestException as e:
-        print(f"Error: {e}")
-        return
-
+def parse_2(response, target_name):
     # 解析HTML，获取歌名
-    soup = BeautifulSoup(resp.text, "html.parser")
+    soup = BeautifulSoup(response.text, "html.parser")
     all_titles = soup.find_all("td", attrs={"class": "f1"})
     for title in all_titles:
         song_name = title.find("a").get_text()
@@ -66,7 +64,7 @@ def crawl2(url_name, target_name):
             if not href:
                 print("Error:href not found")
                 continue
-            print("found:\n", f"https://www.qupu123.com{href}")
+            print(f"found:{song_name}\n", f"https://www.qupu123.com{href}")
             break
 
 
@@ -85,9 +83,9 @@ if __name__ == "__main__":
             total_page = 3
             for page in range(1, total_page + 1):
                 url_temp = url1 + f"2_{page}.html"
-                crawl1(url_temp, target)
+                crawl(url_temp, target, parse_1)
         if curr_url == url2:
             total_page = 3
             for page in range(1, total_page + 1):
                 url_temp = url2 + f"/{page}.html"
-                crawl2(url_temp, target)
+                crawl(url_temp, target, parse_2)
